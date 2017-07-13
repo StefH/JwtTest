@@ -5,6 +5,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace JwtTest
 {
+    // based on http://www.jensign.com/opensslkey/opensslkey.cs
     class OpenSSLKeyHelper
     {
         // encoded OID sequence for PKCS #1 rsaEncryption szOID_RSA_RSA = "1.2.840.113549.1.1.1", including the sequence byte and terminal encoded null
@@ -21,15 +22,11 @@ namespace JwtTest
             return certificate;
         }
 
-        private byte[] GetCertificateBytes(string text)
+        private byte[] GetPrivateBytes(string text)
         {
-            const string header = "-----BEGIN CERTIFICATE-----";
-            const string footer = "-----END CERTIFICATE-----";
+            const string header = "-----BEGIN PRIVATE KEY-----";
+            const string footer = "-----END PRIVATE KEY-----";
             string data = text.Trim();
-            if (!data.StartsWith(header) || !data.EndsWith(footer))
-            {
-                return null;
-            }
 
             data = data.Replace(header, string.Empty);
             data = data.Replace(footer, string.Empty);
@@ -37,16 +34,12 @@ namespace JwtTest
             return Convert.FromBase64String(data.Trim());
         }
 
-        private byte[] GetPrivateBytes(string text)
+        private byte[] GetCertificateBytes(string text)
         {
-            const string header = "-----BEGIN PRIVATE KEY-----";
-            const string footer = "-----END PRIVATE KEY-----";
+            const string header = "-----BEGIN CERTIFICATE-----";
+            const string footer = "-----END CERTIFICATE-----";
             string data = text.Trim();
-            if (!data.StartsWith(header) || !data.EndsWith(footer))
-            {
-                return null;
-            }
-
+            
             data = data.Replace(header, string.Empty);
             data = data.Replace(footer, string.Empty);
 
@@ -229,26 +222,26 @@ namespace JwtTest
             return true;
         }
 
-        private int GetIntegerSize(BinaryReader binr)
+        private int GetIntegerSize(BinaryReader reader)
         {
             int count;
-            byte bt = binr.ReadByte();
+            byte bt = reader.ReadByte();
             if (bt != 0x02) // expect integer
             {
                 return 0;
             }
-            bt = binr.ReadByte();
+            bt = reader.ReadByte();
 
             if (bt == 0x81)
             {
-                count = binr.ReadByte(); // data size in next byte
+                count = reader.ReadByte(); // data size in next byte
             }
             else
             {
                 if (bt == 0x82)
                 {
-                    byte highbyte = binr.ReadByte();
-                    byte lowbyte = binr.ReadByte();
+                    byte highbyte = reader.ReadByte();
+                    byte lowbyte = reader.ReadByte();
                     byte[] modint = { lowbyte, highbyte, 0x00, 0x00 };
                     count = BitConverter.ToInt32(modint, 0);
                 }
@@ -258,13 +251,13 @@ namespace JwtTest
                 }
             }
 
-            while (binr.ReadByte() == 0x00)
+            while (reader.ReadByte() == 0x00)
             {
                 //remove high order zeros in data
                 count -= 1;
             }
 
-            binr.BaseStream.Seek(-1, SeekOrigin.Current); // last ReadByte wasn't a removed zero, so back up a byte
+            reader.BaseStream.Seek(-1, SeekOrigin.Current); // last ReadByte wasn't a removed zero, so back up a byte
             return count;
         }
     }
