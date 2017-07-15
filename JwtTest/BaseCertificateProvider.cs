@@ -38,7 +38,7 @@ namespace JwtTest
         {
             // ---------  Set up stream to read the asn.1 encoded SubjectPublicKeyInfo blob  ------
             var memoryStream = new MemoryStream(pkcs8);
-            int lenstream = (int)memoryStream.Length;
+            int streamLength = (int)memoryStream.Length;
             var reader = new BinaryReader(memoryStream);
 
             try
@@ -92,7 +92,7 @@ namespace JwtTest
                 }
 
                 //------ at this stage, the remaining sequence should be the RSA private key
-                byte[] rsaprivkey = reader.ReadBytes((int)(lenstream - memoryStream.Position));
+                byte[] rsaprivkey = reader.ReadBytes((int)(streamLength - memoryStream.Position));
                 return DecodeRSAPrivateKey(rsaprivkey);
             }
             finally
@@ -103,20 +103,22 @@ namespace JwtTest
 
         private RSACryptoServiceProvider DecodeRSAPrivateKey(byte[] privkey)
         {
-            byte[] MODULUS;
-            byte[] E;
-            byte[] D;
-            byte[] P;
-            byte[] Q;
-            byte[] DP;
-            byte[] DQ;
-            byte[] IQ;
+            //byte[] MODULUS;
+            //byte[] E;
+            //byte[] D;
+            //byte[] P;
+            //byte[] Q;
+            //byte[] DP;
+            //byte[] DQ;
+            //byte[] IQ;
 
             // ---------  Set up stream to decode the asn.1 encoded RSA private key  ------
             var memoryStream = new MemoryStream(privkey);
             var reader = new BinaryReader(memoryStream);
             try
             {
+                var rsaParameters = new RSAParameters();
+
                 ushort twobytes = reader.ReadUInt16();
                 if (twobytes == 0x8130) // data read as little endian order (actual data order for Sequence is 30 81)
                 {
@@ -145,42 +147,31 @@ namespace JwtTest
 
                 //------  all private key components are Integer sequences ----
                 int elems = GetIntegerSize(reader);
-                MODULUS = reader.ReadBytes(elems);
+                rsaParameters.Modulus = reader.ReadBytes(elems);
 
                 elems = GetIntegerSize(reader);
-                E = reader.ReadBytes(elems);
+                rsaParameters.Exponent = reader.ReadBytes(elems);
 
                 elems = GetIntegerSize(reader);
-                D = reader.ReadBytes(elems);
+                rsaParameters.D = reader.ReadBytes(elems);
 
                 elems = GetIntegerSize(reader);
-                P = reader.ReadBytes(elems);
+                rsaParameters.P = reader.ReadBytes(elems);
 
                 elems = GetIntegerSize(reader);
-                Q = reader.ReadBytes(elems);
+                rsaParameters.Q = reader.ReadBytes(elems);
 
                 elems = GetIntegerSize(reader);
-                DP = reader.ReadBytes(elems);
+                rsaParameters.DP = reader.ReadBytes(elems);
 
                 elems = GetIntegerSize(reader);
-                DQ = reader.ReadBytes(elems);
+                rsaParameters.DQ = reader.ReadBytes(elems);
 
                 elems = GetIntegerSize(reader);
-                IQ = reader.ReadBytes(elems);
+                rsaParameters.InverseQ = reader.ReadBytes(elems);
 
                 // ------- create RSACryptoServiceProvider instance and initialize with public key -----
                 var rsaCryptoServiceProvider = new RSACryptoServiceProvider();
-                var rsaParameters = new RSAParameters
-                {
-                    Modulus = MODULUS,
-                    Exponent = E,
-                    D = D,
-                    P = P,
-                    Q = Q,
-                    DP = DP,
-                    DQ = DQ,
-                    InverseQ = IQ
-                };
                 rsaCryptoServiceProvider.ImportParameters(rsaParameters);
                 return rsaCryptoServiceProvider;
             }
