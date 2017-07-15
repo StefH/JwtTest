@@ -6,13 +6,16 @@ using System.Security.Cryptography.X509Certificates;
 namespace JwtTest
 {
     // based on http://www.jensign.com/opensslkey/opensslkey.cs
-    class OpenSSLKeyHelper
+    class CertificateFromFileProvider : ICertificateProvider
     {
         // encoded OID sequence for PKCS #1 rsaEncryption szOID_RSA_RSA = "1.2.840.113549.1.1.1", including the sequence byte and terminal encoded null
         readonly byte[] SeqOID = { 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00 };
 
-        public X509Certificate2 GetX509Certificate2(string certificateText, string privateKeyText)
+        public X509Certificate2 GetCertificate()
         {
+            string certificateText = File.ReadAllText(@"c:\temp\certificate_pub.crt");
+            string privateKeyText = File.ReadAllText(@"c:\temp\private.key");
+
             byte[] certBytes = GetCertificateBytes(certificateText);
             X509Certificate2 certificate = new X509Certificate2(certBytes);
 
@@ -39,7 +42,7 @@ namespace JwtTest
             const string header = "-----BEGIN CERTIFICATE-----";
             const string footer = "-----END CERTIFICATE-----";
             string data = text.Trim();
-            
+
             data = data.Replace(header, string.Empty);
             data = data.Replace(footer, string.Empty);
 

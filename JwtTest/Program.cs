@@ -22,8 +22,8 @@ namespace JwtTest
                 { "https://ims-na1.adobelogin.com/s/ent_campaign_sdk", true }
             };
 
-            var h = new OpenSSLKeyHelper();
-            X509Certificate2 certificate = h.GetX509Certificate2(File.ReadAllText(@"c:\temp\certificate_pub.crt"), File.ReadAllText(@"c:\temp\private.key"));
+            ICertificateProvider provider = new CertificateFromFileProvider();
+            X509Certificate2 certificate = provider.GetCertificate();
 
             IJwtAlgorithm algorithm = new RS256JwtAlgorithm(certificate);
             IJsonSerializer serializer = new JsonNetSerializer();
