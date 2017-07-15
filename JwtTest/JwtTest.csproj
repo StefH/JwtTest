@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AccessModel.cs" />
+    <Compile Include="BaseCertificateProvider.cs" />
     <Compile Include="DateTimeUtils.cs" />
     <Compile Include="IAdobeAccessApi.cs" />
     <Compile Include="IAdobeCampaignApi.cs" />

@@ -120,11 +120,6 @@ namespace JavaScience
         const string pemp8encheader = "-----BEGIN ENCRYPTED PRIVATE KEY-----";
         const string pemp8encfooter = "-----END ENCRYPTED PRIVATE KEY-----";
 
-        // static byte[] pempublickey;
-        // static byte[] pemprivatekey;
-        // static byte[] pkcs8privatekey;
-        // static byte[] pkcs8encprivatekey;
-
         static bool verbose = true;
 
         public static void Main2(string[] args)
@@ -148,7 +143,7 @@ namespace JavaScience
             else
                 DecodeDERKey(filename);
         }
-        
+
         // ------- Decode PEM pubic, private or pkcs8 key ----------------
         public static void DecodePEMKey(string pemstr)
         {
@@ -350,7 +345,7 @@ namespace JavaScience
             {
                 binkey = Convert.FromBase64String(pubstr);
             }
-            catch (System.FormatException)
+            catch (FormatException)
             {       //if can't b64 decode, data is not valid
                 return null;
             }
@@ -449,7 +444,7 @@ namespace JavaScience
             {
                 binkey = Convert.FromBase64String(pubstr);
             }
-            catch (System.FormatException)
+            catch (FormatException)
             {       //if can't b64 decode, data is not valid
                 return null;
             }
@@ -677,7 +672,7 @@ namespace JavaScience
             {
                 binkey = Convert.FromBase64String(pubstr);
             }
-            catch (System.FormatException)
+            catch (FormatException)
             {       //if can't b64 decode, data is not valid
                 return null;
             }
@@ -938,7 +933,7 @@ namespace JavaScience
                 binkey = Convert.FromBase64String(pvkstr);
                 return binkey;
             }
-            catch (System.FormatException)
+            catch (FormatException)
             {       //if can't b64 decode, it must be an encrypted private key
                 //Console.WriteLine("Not an unencrypted OpenSSL PEM private key");  
             }
@@ -955,7 +950,7 @@ namespace JavaScience
             byte[] salt = new byte[saltstr.Length / 2];
             for (int i = 0; i < salt.Length; i++)
                 salt[i] = Convert.ToByte(saltstr.Substring(i * 2, 2), 16);
-            if (!(str.ReadLine() == ""))
+            if (str.ReadLine() != "")
                 return null;
 
             //------ remaining b64 data is encrypted RSA key ----
@@ -965,7 +960,7 @@ namespace JavaScience
             {   //should have b64 encrypted RSA key now
                 binkey = Convert.FromBase64String(encryptedstr);
             }
-            catch (System.FormatException)
+            catch (FormatException)
             {  // bad b64 data.
                 return null;
             }
@@ -984,18 +979,12 @@ namespace JavaScience
             byte[] rsakey = DecryptKey(binkey, deskey, salt);   //OpenSSL uses salt value in PEM header also as 3DES IV
             if (rsakey != null)
                 return rsakey;  //we have a decrypted RSA private key
-            else
-            {
-                Console.WriteLine("Failed to decrypt RSA private key; probably wrong password.");
-                return null;
-            }
+
+            Console.WriteLine("Failed to decrypt RSA private key; probably wrong password.");
+            return null;
         }
 
-
-
-
         // ----- Decrypt the 3DES encrypted RSA private key ----------
-
         public static byte[] DecryptKey(byte[] cipherData, byte[] desKey, byte[] IV)
         {
             MemoryStream memst = new MemoryStream();
@@ -1016,9 +1005,6 @@ namespace JavaScience
             byte[] decryptedData = memst.ToArray();
             return decryptedData;
         }
-
-
-
 
         //-----   OpenSSL PBKD uses only one hash cycle (count); miter is number of iterations required to build sufficient bytes ---
         private static byte[] GetOpenSSL3deskey(byte[] salt, SecureString secpswd, int count, int miter)
@@ -1077,11 +1063,6 @@ namespace JavaScience
             return deskey;
         }
 
-
-
-
-
-
         //------   Since we are using an RSA with nonpersisted keycontainer, must pass it in to ensure it isn't colledted  -----
         private static byte[] GetPkcs12(RSA rsa, string keycontainer, string cspprovider, uint KEYSPEC, uint cspflags)
         {
@@ -1116,9 +1097,6 @@ namespace JavaScience
             return pfxblob;
         }
 
-
-
-
         private static IntPtr CreateUnsignedCertCntxt(string keycontainer, string provider, uint KEYSPEC, uint cspflags, string DN)
         {
             const uint AT_KEYEXCHANGE = 0x00000001;
@@ -1145,7 +1123,6 @@ namespace JavaScience
                 return IntPtr.Zero;
             if (DN == "")
                 return IntPtr.Zero;
-
 
             if (Win32.CertStrToName(X509_ASN_ENCODING, DN, CERT_X500_NAME_STR, IntPtr.Zero, null, ref cbName, IntPtr.Zero))
             {
@@ -1174,9 +1151,6 @@ namespace JavaScience
             return hCertCntxt;
         }
 
-
-
-
         private static SecureString GetSecPswd(string prompt)
         {
             SecureString password = new SecureString();
@@ -1194,7 +1168,7 @@ namespace JavaScience
                     Console.WriteLine();
                     return password;
                 }
-                else if (cki.Key == ConsoleKey.Backspace)
+                if (cki.Key == ConsoleKey.Backspace)
                 {
                     // remove the last asterisk from the screen...
                     if (password.Length > 0)
@@ -1229,10 +1203,6 @@ namespace JavaScience
                 }
             }
         }
-
-
-
-
 
         private static bool CompareBytearrays(byte[] a, byte[] b)
         {
