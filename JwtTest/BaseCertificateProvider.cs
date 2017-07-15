@@ -36,7 +36,7 @@ namespace JwtTest
 
         protected RSACryptoServiceProvider DecodePrivateKeyInfo(byte[] pkcs8)
         {
-            // ---------  Set up stream to read the asn.1 encoded SubjectPublicKeyInfo blob  ------
+            // read the asn.1 encoded SubjectPublicKeyInfo blob
             var memoryStream = new MemoryStream(pkcs8);
             int streamLength = (int)memoryStream.Length;
             var reader = new BinaryReader(memoryStream);
@@ -70,7 +70,7 @@ namespace JwtTest
                 }
 
                 byte[] seq = reader.ReadBytes(15);
-                if (!CompareBytearrays(seq, SeqOID)) // make sure Sequence for OID is correct
+                if (!CompareByteArrays(seq, SeqOID)) // make sure Sequence for OID is correct
                 {
                     return null;
                 }
@@ -81,7 +81,7 @@ namespace JwtTest
                     return null;
                 }
 
-                bt = reader.ReadByte(); //read next byte, or next 2 bytes is  0x81 or 0x82; otherwise bt is the byte count
+                bt = reader.ReadByte(); // read next byte, or next 2 bytes is  0x81 or 0x82; otherwise bt is the byte count
                 if (bt == 0x81)
                 {
                     reader.ReadByte();
@@ -91,7 +91,7 @@ namespace JwtTest
                     reader.ReadUInt16();
                 }
 
-                //------ at this stage, the remaining sequence should be the RSA private key
+                // at this stage, the remaining sequence should be the RSA private key
                 byte[] rsaprivkey = reader.ReadBytes((int)(streamLength - memoryStream.Position));
                 return DecodeRSAPrivateKey(rsaprivkey);
             }
@@ -103,26 +103,17 @@ namespace JwtTest
 
         private RSACryptoServiceProvider DecodeRSAPrivateKey(byte[] privkey)
         {
-            //byte[] MODULUS;
-            //byte[] E;
-            //byte[] D;
-            //byte[] P;
-            //byte[] Q;
-            //byte[] DP;
-            //byte[] DQ;
-            //byte[] IQ;
-
-            // ---------  Set up stream to decode the asn.1 encoded RSA private key  ------
+            // decode the asn.1 encoded RSA private key
             var memoryStream = new MemoryStream(privkey);
             var reader = new BinaryReader(memoryStream);
             try
             {
-                var rsaParameters = new RSAParameters();
+
 
                 ushort twobytes = reader.ReadUInt16();
                 if (twobytes == 0x8130) // data read as little endian order (actual data order for Sequence is 30 81)
                 {
-                    reader.ReadByte(); //advance 1 byte
+                    reader.ReadByte(); // advance 1 byte
                 }
                 else if (twobytes == 0x8230)
                 {
@@ -145,7 +136,9 @@ namespace JwtTest
                     return null;
                 }
 
-                //------  all private key components are Integer sequences ----
+                // all private key components are Integer sequences
+                var rsaParameters = new RSAParameters();
+
                 int elems = GetIntegerSize(reader);
                 rsaParameters.Modulus = reader.ReadBytes(elems);
 
@@ -170,7 +163,7 @@ namespace JwtTest
                 elems = GetIntegerSize(reader);
                 rsaParameters.InverseQ = reader.ReadBytes(elems);
 
-                // ------- create RSACryptoServiceProvider instance and initialize with public key -----
+                // create RSACryptoServiceProvider instance
                 var rsaCryptoServiceProvider = new RSACryptoServiceProvider();
                 rsaCryptoServiceProvider.ImportParameters(rsaParameters);
                 return rsaCryptoServiceProvider;
@@ -181,17 +174,17 @@ namespace JwtTest
             }
         }
 
-        private bool CompareBytearrays(byte[] a, byte[] b)
+        private bool CompareByteArrays(byte[] arrayA, byte[] arrayB)
         {
-            if (a.Length != b.Length)
+            if (arrayA.Length != arrayB.Length)
             {
                 return false;
             }
 
             int i = 0;
-            foreach (byte c in a)
+            foreach (byte c in arrayA)
             {
-                if (c != b[i])
+                if (c != arrayB[i])
                 {
                     return false;
                 }
@@ -211,32 +204,29 @@ namespace JwtTest
             }
             bt = reader.ReadByte();
 
-            if (bt == 0x81)
+            switch (bt)
             {
-                count = reader.ReadByte(); // data size in next byte
-            }
-            else
-            {
-                if (bt == 0x82)
-                {
+                case 0x81:
+                    count = reader.ReadByte(); // data size in next byte
+                    break;
+                case 0x82:
                     byte highbyte = reader.ReadByte();
                     byte lowbyte = reader.ReadByte();
                     byte[] modint = { lowbyte, highbyte, 0x00, 0x00 };
                     count = BitConverter.ToInt32(modint, 0);
-                }
-                else
-                {
+                    break;
+                default:
                     count = bt; // we already have the data size
-                }
+                    break;
             }
 
             while (reader.ReadByte() == 0x00)
             {
-                //remove high order zeros in data
+                // remove high order zeros in data
                 count -= 1;
             }
 
-            reader.BaseStream.Seek(-1, SeekOrigin.Current); // last ReadByte wasn't a removed zero, so back up a byte
+            reader.BaseStream.Seek(-1, SeekOrigin.Current); // last ReadByte wasn't arrayA removed zero, so back up arrayA byte
             return count;
         }
     }
