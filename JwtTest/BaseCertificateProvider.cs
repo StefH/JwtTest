@@ -8,33 +8,53 @@ namespace JwtTest
     abstract class BaseCertificateProvider
     {
         // encoded OID sequence for PKCS #1 rsaEncryption szOID_RSA_RSA = "1.2.840.113549.1.1.1", including the sequence byte and terminal encoded null
-        readonly byte[] SeqOID = { 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00 };
+        private readonly byte[] SeqOID = { 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00 };
 
-        protected byte[] GetPrivateBytes(string text)
+        private const string PublicKeyHeader = "-----BEGIN CERTIFICATE-----";
+        private const string PublicKeyFooter = "-----END CERTIFICATE-----";
+        private const string RSAPrivateKeyHeader = "-----BEGIN RSA PRIVATE KEY-----";
+        private const string RSAPrivateKeyFooter = "-----END RSA PRIVATE KEY-----";
+        private const string PrivateKeyHeader = "-----BEGIN PRIVATE KEY-----";
+        private const string PrivateKeyFooter = "-----END PRIVATE KEY-----";
+
+        protected byte[] GetPublicKeyBytes(string publicKeyString)
         {
-            const string header = "-----BEGIN PRIVATE KEY-----";
-            const string footer = "-----END PRIVATE KEY-----";
-            string data = text.Trim();
+            string text = publicKeyString.Trim();
 
+            text = text.Replace(PublicKeyHeader, string.Empty);
+            text = text.Replace(PublicKeyFooter, string.Empty);
+
+            return Convert.FromBase64String(text);
+        }
+
+        protected RSACryptoServiceProvider DecodePrivateKey(string privateKeyString)
+        {
+            string text = privateKeyString.Trim();
+            if (text.StartsWith(RSAPrivateKeyHeader) && text.EndsWith(RSAPrivateKeyFooter))
+            {
+                byte[] data = GetPrivateKeyBytes(text, RSAPrivateKeyHeader, RSAPrivateKeyFooter);
+                return DecodeRSAPrivateKey(data);
+            }
+
+            if (text.StartsWith(PrivateKeyHeader) && text.EndsWith(PrivateKeyFooter))
+            {
+                byte[] data = GetPrivateKeyBytes(text, PrivateKeyHeader, PrivateKeyFooter);
+                return DecodePrivateKey(data);
+            }
+
+            throw new NotSupportedException();
+        }
+
+        private byte[] GetPrivateKeyBytes(string text, string header, string footer)
+        {
+            string data = text;
             data = data.Replace(header, string.Empty);
             data = data.Replace(footer, string.Empty);
 
-            return Convert.FromBase64String(data.Trim());
+            return Convert.FromBase64String(data);
         }
 
-        protected byte[] GetCertificateBytes(string text)
-        {
-            const string header = "-----BEGIN CERTIFICATE-----";
-            const string footer = "-----END CERTIFICATE-----";
-            string data = text.Trim();
-
-            data = data.Replace(header, string.Empty);
-            data = data.Replace(footer, string.Empty);
-
-            return Convert.FromBase64String(data.Trim());
-        }
-
-        protected RSACryptoServiceProvider DecodePrivateKeyInfo(byte[] pkcs8)
+        private RSACryptoServiceProvider DecodePrivateKey(byte[] pkcs8)
         {
             // read the asn.1 encoded SubjectPublicKeyInfo blob
             var memoryStream = new MemoryStream(pkcs8);

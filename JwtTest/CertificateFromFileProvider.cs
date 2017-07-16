@@ -1,22 +1,18 @@
-﻿using System.IO;
-using System.Security.Cryptography.X509Certificates;
+﻿using System.Security.Cryptography.X509Certificates;
 
 namespace JwtTest
 {
     class CertificateFromFileProvider : BaseCertificateProvider, ICertificateProvider
     {
-        public X509Certificate2 GetCertificate()
+        public CertificateFromFileProvider(string certificateText, string privateKeyText)
         {
-            string certificateText = File.ReadAllText(@"c:\temp\certificate_pub.crt");
-            string privateKeyText = File.ReadAllText(@"c:\temp\private.key");
-
-            byte[] certBytes = GetCertificateBytes(certificateText);
-            X509Certificate2 certificate = new X509Certificate2(certBytes);
-
-            byte[] privateBytes = GetPrivateBytes(privateKeyText);
-            certificate.PrivateKey = DecodePrivateKeyInfo(privateBytes);
-
-            return certificate;
+            byte[] certBytes = GetPublicKeyBytes(certificateText);
+            Certificate = new X509Certificate2(certBytes)
+            {
+                PrivateKey = DecodePrivateKey(privateKeyText)
+            };
         }
+
+        public X509Certificate2 Certificate { get; }
     }
 }

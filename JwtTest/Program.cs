@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
+using Jose;
 using JWT;
 using JWT.Serializers;
 using RestEase;
@@ -22,15 +23,24 @@ namespace JwtTest
                 { "https://ims-na1.adobelogin.com/s/ent_campaign_sdk", true }
             };
 
-            ICertificateProvider provider = new CertificateFromFileProvider();
-            X509Certificate2 certificate = provider.GetCertificate();
+            string certificateText = File.ReadAllText(@"c:\temp\certificate_pub.crt");
+            string privateKeyText = File.ReadAllText(@"c:\temp\private.key");
+            ICertificateProvider provider = new CertificateFromFileProvider(certificateText, privateKeyText);
+            X509Certificate2 certificate = provider.Certificate;
 
-            IJwtAlgorithm algorithm = new RS256JwtAlgorithm(certificate);
-            IJsonSerializer serializer = new JsonNetSerializer();
-            IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
-            IJwtEncoder encoder = new JwtEncoder(algorithm, serializer, urlEncoder);
+            string token1;
+            string token2;
+            {
+                IJwtAlgorithm algorithm = new RS256JwtAlgorithm(certificate);
+                IJsonSerializer serializer = new JsonNetSerializer();
+                IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
+                IJwtEncoder encoder = new JwtEncoder(algorithm, serializer, urlEncoder);
 
-            string token = encoder.Encode(payload, "");
+                token1 = encoder.Encode(payload, "");
+            }
+            {
+                token2 = Jose.JWT.Encode(payload, certificate.PrivateKey, JwsAlgorithm.RS256);
+            }
             var tokenClient = RestClient.For<IAdobeAccessApi>("https://ims-na1.adobelogin.com/ims/exchange/jwt");
 
             var lines = File.ReadAllLines(@"c:\temp\data.txt");
