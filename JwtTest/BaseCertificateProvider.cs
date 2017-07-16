@@ -10,42 +10,50 @@ namespace JwtTest
         // encoded OID sequence for PKCS #1 rsaEncryption szOID_RSA_RSA = "1.2.840.113549.1.1.1", including the sequence byte and terminal encoded null
         private readonly byte[] SeqOID = { 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00 };
 
-        private const string PublicKeyHeader = "-----BEGIN CERTIFICATE-----";
-        private const string PublicKeyFooter = "-----END CERTIFICATE-----";
+        private const string PublicKeyHeader = "-----BEGIN PUBLIC KEY-----";
+        private const string PublicKeyFooter = "-----END PUBLIC KEY-----";
+        private const string PublicCertificateHeader = "-----BEGIN CERTIFICATE-----";
+        private const string PublicCertificateFooter = "-----END CERTIFICATE-----";
         private const string RSAPrivateKeyHeader = "-----BEGIN RSA PRIVATE KEY-----";
         private const string RSAPrivateKeyFooter = "-----END RSA PRIVATE KEY-----";
         private const string PrivateKeyHeader = "-----BEGIN PRIVATE KEY-----";
         private const string PrivateKeyFooter = "-----END PRIVATE KEY-----";
 
-        protected byte[] GetPublicKeyBytes(string publicKeyString)
+        protected byte[] GetPublicKeyBytes(string publicText)
         {
-            string text = publicKeyString.Trim();
+            string text = publicText.Trim();
+            if (text.StartsWith(PublicKeyHeader) && text.EndsWith(PublicKeyFooter))
+            {
+                return ExtractBytes(text, PublicKeyHeader, PublicKeyFooter);
+            }
 
-            text = text.Replace(PublicKeyHeader, string.Empty);
-            text = text.Replace(PublicKeyFooter, string.Empty);
+            if (text.StartsWith(PublicCertificateHeader) && text.EndsWith(PublicCertificateFooter))
+            {
+                return ExtractBytes(text, PublicCertificateHeader, PublicCertificateFooter);
+            }
 
-            return Convert.FromBase64String(text);
+            throw new NotSupportedException();
         }
 
-        protected RSACryptoServiceProvider DecodePrivateKey(string privateKeyString)
+        protected RSACryptoServiceProvider DecodePrivateKey(string privateText)
         {
-            string text = privateKeyString.Trim();
+            string text = privateText.Trim();
             if (text.StartsWith(RSAPrivateKeyHeader) && text.EndsWith(RSAPrivateKeyFooter))
             {
-                byte[] data = GetPrivateKeyBytes(text, RSAPrivateKeyHeader, RSAPrivateKeyFooter);
+                byte[] data = ExtractBytes(text, RSAPrivateKeyHeader, RSAPrivateKeyFooter);
                 return DecodeRSAPrivateKey(data);
             }
 
             if (text.StartsWith(PrivateKeyHeader) && text.EndsWith(PrivateKeyFooter))
             {
-                byte[] data = GetPrivateKeyBytes(text, PrivateKeyHeader, PrivateKeyFooter);
+                byte[] data = ExtractBytes(text, PrivateKeyHeader, PrivateKeyFooter);
                 return DecodePrivateKey(data);
             }
 
             throw new NotSupportedException();
         }
 
-        private byte[] GetPrivateKeyBytes(string text, string header, string footer)
+        private byte[] ExtractBytes(string text, string header, string footer)
         {
             string data = text;
             data = data.Replace(header, string.Empty);
