@@ -67,9 +67,8 @@ namespace JwtTest
             // read the asn.1 encoded SubjectPublicKeyInfo blob
             var memoryStream = new MemoryStream(pkcs8);
             int streamLength = (int)memoryStream.Length;
-            var reader = new BinaryReader(memoryStream);
 
-            try
+            using (var reader = new BinaryReader(memoryStream))
             {
                 ushort twobytes = reader.ReadUInt16();
                 if (twobytes == 0x8130) // data read as little endian order (actual data order for Sequence is 30 81)
@@ -123,21 +122,14 @@ namespace JwtTest
                 byte[] rsaprivkey = reader.ReadBytes((int)(streamLength - memoryStream.Position));
                 return DecodeRSAPrivateKey(rsaprivkey);
             }
-            finally
-            {
-                reader.Close();
-            }
         }
 
         private RSACryptoServiceProvider DecodeRSAPrivateKey(byte[] privkey)
         {
             // decode the asn.1 encoded RSA private key
             var memoryStream = new MemoryStream(privkey);
-            var reader = new BinaryReader(memoryStream);
-            try
+            using (var reader = new BinaryReader(memoryStream))
             {
-
-
                 ushort twobytes = reader.ReadUInt16();
                 if (twobytes == 0x8130) // data read as little endian order (actual data order for Sequence is 30 81)
                 {
@@ -195,10 +187,6 @@ namespace JwtTest
                 var rsaCryptoServiceProvider = new RSACryptoServiceProvider();
                 rsaCryptoServiceProvider.ImportParameters(rsaParameters);
                 return rsaCryptoServiceProvider;
-            }
-            finally
-            {
-                reader.Close();
             }
         }
 
