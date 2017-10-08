@@ -28,7 +28,7 @@ namespace JwtTest
             //};
             var payload = new PayloadTest
             {
-                Sub = "1234567890",
+                Sub = 1234567890,
                 Name = "John Doe",
                 Admin = true,
                 Expires = Convert.ToInt32(DateTimeUtils.DateTimeToUnixTimestamp(DateTime.UtcNow.AddHours(48)))

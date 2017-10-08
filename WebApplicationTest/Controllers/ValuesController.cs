@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Web.Http;
+using WebApplicationTest.Filters;
 
 namespace WebApplicationTest.Controllers
 {
@@ -7,10 +8,11 @@ namespace WebApplicationTest.Controllers
     {
         // GET api/values
         [Authorize]
-        public IEnumerable<string> Get()
+        public IEnumerable<object> Get()
         {
             var p = RequestContext.Principal;
-            return new[] { "value1", "value2", p.Identity.Name };
+            var i = (MyIdentity)p.Identity;
+            return new object[] { "value1", "value2", i.Name, i.Sub };
         }
 
         // GET api/values/5

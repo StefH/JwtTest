@@ -12,6 +12,8 @@ namespace WebApplicationTest.Filters
 {
     public class MyAuthFilter : IAuthenticationFilter
     {
+        private readonly byte[] _secretBytes = Encoding.UTF8.GetBytes("stef");
+
         public bool AllowMultiple { get; } = true;
 
         public async Task AuthenticateAsync(HttpAuthenticationContext context, CancellationToken cancellationToken)
@@ -42,23 +44,23 @@ namespace WebApplicationTest.Filters
             }
 
             // 5. If there are credentials that the filter understands, try to validate them.
-            byte[] secretBytes = Encoding.UTF8.GetBytes("stef");
+            PayloadTest payload;
             try
             {
-                var payload = Jose.JWT.Decode<PayloadTest>(authorizationToken, secretBytes);
+                payload = Jose.JWT.Decode<PayloadTest>(authorizationToken, _secretBytes);
 
                 if (DateTime.UtcNow > DateTimeUtils.UnixTimeStampToDateTime(payload.Expires))
                 {
                     throw new Exception();
                 }
             }
-            catch
+            catch (Exception e)
             {
                 context.ErrorResult = new AuthenticationFailureResult("Invalid credentials", request);
                 return;
             }
 
-            var i = new GenericIdentity("user");
+            var i = new MyIdentity { Name = payload.Name, Sub = payload.Sub };
             IPrincipal principal = new GenericPrincipal(i, new string[] { });
             //if (principal == null)
             //{
