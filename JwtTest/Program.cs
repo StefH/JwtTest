@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using Jose;
 using JWT;
 using JWT.Algorithms;
@@ -18,15 +20,36 @@ namespace JwtTest
             IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
             IJwtEncoder encoder = new JwtEncoder(algorithm, serializer, urlEncoder);
 
-            var payload = new Dictionary<string, object>
+            //var payload = new Dictionary<string, object>
+            //{
+            //    { "sub", "1234567890" },
+            //    { "name", "John Doe" },
+            //    { "admin", true }
+            //};
+            var payload = new PayloadTest
             {
-                { "sub", "1234567890" },
-                { "name", "John Doe" },
-                { "admin", true }
+                Sub = "1234567890",
+                Name = "John Doe",
+                Admin = true
             };
 
-            string tokenStef = encoder.Encode(payload, "stef");
-            string tokenSecret = encoder.Encode(payload, "secret");
+            byte[] secretBytes = Encoding.UTF8.GetBytes("stef");
+
+            Jose.JWT.DefaultSettings.JsonMapper = new NewtonsoftMapper();
+
+            string tokenStef = Jose.JWT.Encode(payload, secretBytes, JwsAlgorithm.HS256);
+            string tokenSecret = encoder.Encode(payload, "stef");
+            
+            PayloadTest decodedPayload;
+            try
+            {
+                decodedPayload = Jose.JWT.Decode<PayloadTest>(tokenStef, secretBytes);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
 
             int y = 0;
         }
