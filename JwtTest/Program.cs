@@ -3,6 +3,7 @@ using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using Jose;
 using JWT;
+using JWT.Algorithms;
 using JWT.Serializers;
 using RestEase;
 
@@ -10,8 +11,30 @@ namespace JwtTest
 {
     class Program
     {
+        private static void RunHMACSHA256Algorithm()
+        {
+            IJwtAlgorithm algorithm = new HMACSHA256Algorithm();
+            IJsonSerializer serializer = new JsonNetSerializer();
+            IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
+            IJwtEncoder encoder = new JwtEncoder(algorithm, serializer, urlEncoder);
+
+            var payload = new Dictionary<string, object>
+            {
+                { "sub", "1234567890" },
+                { "name", "John Doe" },
+                { "admin", true }
+            };
+
+            string tokenStef = encoder.Encode(payload, "stef");
+            string tokenSecret = encoder.Encode(payload, "secret");
+
+            int y = 0;
+        }
+
         static void Main(string[] args)
         {
+            RunHMACSHA256Algorithm();
+
             // JavaScience.opensslkey.Main2(new [] { "private.key" });
 
             var payload = new Dictionary<string, object>
