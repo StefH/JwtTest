@@ -30,7 +30,8 @@ namespace JwtTest
             {
                 Sub = "1234567890",
                 Name = "John Doe",
-                Admin = true
+                Admin = true,
+                Expires = Convert.ToInt32(DateTimeUtils.DateTimeToUnixTimestamp(DateTime.UtcNow.AddHours(48)))
             };
 
             byte[] secretBytes = Encoding.UTF8.GetBytes("stef");
