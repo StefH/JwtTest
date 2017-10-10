@@ -2,16 +2,25 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Filters;
+using WebApplicationTest.Utils;
 
 namespace WebApplicationTest.Filters
 {
     public class MyAuthFilter : IAuthenticationFilter
     {
+        public IDateTimeService DateTimeService { get; set; }
+
+        //public MyAuthFilter(IDateTimeService dateTimeService)
+        //{
+        //    DateTimeService = dateTimeService;
+        //}
+
         private readonly byte[] _secretBytes = Encoding.UTF8.GetBytes("stef");
 
         public bool AllowMultiple { get; } = true;

@@ -7,7 +7,7 @@ namespace WebApplicationTest.Controllers
     public class ValuesController : ApiController
     {
         // GET api/values
-        [Authorize]
+        [MyAuthorize]
         public IEnumerable<object> Get()
         {
             var p = RequestContext.Principal;
